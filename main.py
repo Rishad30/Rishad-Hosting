@@ -2,7 +2,7 @@
 
 import os, sys, subprocess, threading, time, shutil, zipfile
 import tarfile, sqlite3, ast, importlib, importlib.util
-import html as html_lib, logging
+import html as html_lib, logging, urllib.request
 from datetime import datetime, timezone
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
@@ -818,6 +818,21 @@ def run_http_server():
     server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
     server.serve_forever()
 
+def keep_alive():
+    """Render free service-ke sleep theke bachate 10 minute por por ping kore"""
+    url = os.environ.get("RENDER_EXTERNAL_URL")
+    if not url:
+        return
+    time.sleep(60)
+    while True:
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'KeepAlive/1.0'})
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                logger.info(f"Keep-alive ping sent to {url}: Status {resp.status}")
+        except Exception as e:
+            logger.warning(f"Keep-alive ping failed: {e}")
+        time.sleep(600)  # Prottek 10 minute por por ping korbe
+
 def start_bot():
     logger.info("Starting bot...")
     while True:
@@ -829,4 +844,5 @@ def start_bot():
 
 if __name__ == "__main__":
     threading.Thread(target=run_http_server, daemon=True).start()
+    threading.Thread(target=keep_alive, daemon=True).start()
     start_bot()
